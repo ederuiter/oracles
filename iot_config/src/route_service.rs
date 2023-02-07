@@ -266,7 +266,7 @@ impl iot_config::Route for RouteService {
             "updating euis"
         );
 
-        route::update_euis(&to_add, &to_remove, &self.pool, self.update_channel.clone())
+        route::update_euis(&to_add, &to_remove, &self.pool, self.clone_update_channel())
             .await
             .map_err(|err| {
                 tracing::error!("eui update failed: {err:?}");
@@ -281,7 +281,7 @@ impl iot_config::Route for RouteService {
         request: Request<RouteDeleteEuisReqV1>,
     ) -> GrpcResult<RouteEuisResV1> {
         let request = request.into_inner();
-        route::delete_euis(&request.route_id, &self.pool, self.update_channel.clone())
+        route::delete_euis(&request.route_id, &self.pool, self.clone_update_channel())
             .await
             .map_err(|_| Status::internal("eui delete failed"))?;
         Ok(Response::new(RouteEuisResV1 {}))
@@ -333,7 +333,7 @@ impl iot_config::Route for RouteService {
         );
 
         // TODO: check devaddr ranges against org constraints.
-        route::update_devaddr_ranges(&to_add, &to_remove, &self.pool, self.update_channel.clone())
+        route::update_devaddr_ranges(&to_add, &to_remove, &self.pool, self.clone_update_channel())
             .await
             .map_err(|err| {
                 tracing::error!("devaddr range update failed: {err:?}");
@@ -347,7 +347,7 @@ impl iot_config::Route for RouteService {
         request: Request<RouteDeleteDevaddrRangesReqV1>,
     ) -> GrpcResult<RouteDevaddrRangesResV1> {
         let request = request.into_inner();
-        route::delete_devaddr_ranges(&request.route_id, &self.pool, self.update_channel.clone())
+        route::delete_devaddr_ranges(&request.route_id, &self.pool, self.clone_update_channel())
             .await
             .map_err(|_| Status::internal("devaddr range delete failed"))?;
         Ok(Response::new(RouteDevaddrRangesResV1 {}))
