@@ -76,7 +76,7 @@ impl Daemon {
         let gateway_svc = GatewayService::new(settings).await?;
         let route_svc = RouteService::new(settings).await?;
         let org_svc = OrgService::new(settings, route_svc.clone_update_channel()).await?;
-        let session_key_filter_svc = SessionKeyFilterService {};
+        let session_key_filter_svc = SessionKeyFilterService::new(settings).await?;
 
         transport::Server::builder()
             .http2_keepalive_interval(Some(Duration::from_secs(250)))
