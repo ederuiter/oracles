@@ -5,7 +5,7 @@ create type org_status as enum (
 
 create table organizations (
     oui bigserial primary key not null,
-    owner_pubkey text not null unique,
+    owner_pubkey text not null,
     payer_pubkey text not null,
     delegate_keys text[],
     status org_status not null default 'enabled',
