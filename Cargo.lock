@@ -1492,6 +1492,7 @@ dependencies = [
  "metrics",
  "poc-metrics",
  "prost",
+ "rand",
  "regex",
  "rust_decimal",
  "rust_decimal_macros",

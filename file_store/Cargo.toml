@@ -45,3 +45,4 @@ base64 = {workspace = true}
 [dev-dependencies]
 hex-literal = "0"
 tempfile = "3"
+rand = "*"

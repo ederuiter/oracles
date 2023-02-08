@@ -61,6 +61,10 @@ impl_msg_verify!(LoadRegionReqV1, signature);
 mod test {
     use super::*;
     use base64::Engine;
+    use helium_crypto::Sign;
+    use rand::rngs::OsRng;
+    use chrono::Utc;
+    use std::str::FromStr;
 
     #[test]
     fn verify_heartbeat() {
@@ -75,6 +79,39 @@ mod test {
         .expect("cell heartbeat");
         let public_key = PublicKey::from_bytes(&msg.pub_key).expect("public key");
         assert!(msg.verify(&public_key).is_ok());
+    }
+
+    #[test]
+    fn verify_ed25519_heartbeat() {
+        let key = helium_crypto::Keypair::generate(
+            helium_crypto::KeyTag {
+                network: helium_crypto::Network::MainNet,
+                key_type: helium_crypto::KeyType::Ed25519,
+            },
+            &mut OsRng,
+        );
+        let pubkey = key.public_key();
+        let b58_pubkey = pubkey.clone().to_string();
+        println!("B58 Pubkey: {b58_pubkey}");
+
+        let mut req = CellHeartbeatReqV1 {
+            pub_key: pubkey.to_vec(),
+            hotspot_type: "hotspot".to_string(),
+            cell_id: 123,
+            timestamp: Utc::now().timestamp() as u64,
+            lat: 72.63,
+            lon: 72.53,
+            operation_mode: true,
+            cbsd_category: "category".to_string(),
+            cbsd_id: "id".to_string(),
+            signature: vec![],
+        };
+        req.signature = key.sign(&req.encode_to_vec()).expect("signing req");
+        let encoded = req.encode_to_vec();
+
+        let decoded_pubkey = helium_crypto::PublicKey::from_str(&b58_pubkey).expect("decode public key");
+        let decoded = CellHeartbeatReqV1::decode(encoded.as_slice()).expect("decode proto");
+        assert!(decoded.verify(&decoded_pubkey).is_ok());
     }
 
     #[test]
