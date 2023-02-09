@@ -273,7 +273,98 @@ fn sign_txn(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use helium_crypto::{KeyTag, KeyType, Keypair, Network, Verify};
     use rust_decimal_macros::dec;
+
+    #[test]
+    fn txn_construction_test() {
+        const ENTROPY: [u8; 32] = [
+            248, 55, 78, 168, 99, 123, 22, 203, 36, 250, 136, 86, 110, 119, 198, 170, 248, 55, 78,
+            168, 99, 123, 22, 203, 36, 250, 136, 86, 110, 119, 198, 170,
+        ];
+        let kt = KeyTag {
+            network: Network::MainNet,
+            key_type: KeyType::Ed25519,
+        };
+        let keypair = Keypair::generate_from_entropy(kt, &ENTROPY).expect("keypair");
+        let pubkey = keypair.public_key();
+
+        let poc_witness = BlockchainPocWitnessV1 {
+            gateway: vec![],
+            timestamp: 123,
+            signal: 0,
+            packet_hash: vec![],
+            signature: vec![],
+            snr: 0.0,
+            frequency: 0.0,
+            datarate: "dr".to_string(),
+            channel: 0,
+            reward_shares: 0,
+            reward_unit: 2,
+            hex_scale: 3,
+        };
+        let poc_receipt = BlockchainPocReceiptV1 {
+            gateway: vec![],
+            timestamp: 123,
+            signal: 0,
+            data: vec![],
+            origin: 0,
+            signature: vec![],
+            snr: 0.0,
+            frequency: 0.0,
+            channel: 0,
+            datarate: "dr".to_string(),
+            tx_power: -1,
+            addr_hash: vec![],
+            reward_shares: 0,
+            reward_unit: 1,
+            hex_scale: 4,
+        };
+        let poc_path_element = BlockchainPocPathElementV1 {
+            challengee: vec![],
+            receipt: Some(poc_receipt),
+            witnesses: vec![poc_witness],
+        };
+        let path = vec![poc_path_element];
+
+        // txn0 will be signed over the path with the reward_unit and hex_scale
+        let mut txn0 = BlockchainTxnPocReceiptsV2 {
+            challenger: keypair.public_key().to_vec(),
+            secret: vec![],
+            onion_key_hash: vec![],
+            path: path.clone(),
+            fee: 0,
+            signature: vec![],
+            block_hash: vec![],
+            timestamp: 456,
+        };
+        let signature0 = sign_txn(&txn0, &keypair).expect("unable to sign txn");
+        txn0.signature = signature0.clone();
+        let (_txn_hash, txn0_hash_b64_url) = hash_txn(&txn0);
+
+        // txn1 signature will be stripped of the reward_unit and hex_scale
+        let (txn1, _, txn1_hash_b64_url) = construct_signed_txn(path.clone(), 456, &keypair)
+            .expect("unable to construct signed txn");
+
+        // The txn hashes should be equal
+        assert_eq!(txn0_hash_b64_url, txn1_hash_b64_url);
+
+        let mut txn0 = txn0;
+        txn0.signature = vec![];
+        // This txn0 should be verifiable as is
+        assert!(pubkey.verify(&txn0.encode_to_vec(), &signature0).is_ok());
+
+        let signature1 = txn1.clone().signature;
+
+        // The two signatures should be different
+        assert_ne!(signature0, signature1);
+
+        let mut txn1 = txn1;
+        txn1.signature = vec![];
+        // For txn1, we strip the path before verifying
+        txn1.path = strip_path(path);
+        assert!(pubkey.verify(&txn1.encode_to_vec(), &signature1).is_ok());
+    }
 
     #[test]
     fn max_witnesses_per_receipt_test() {

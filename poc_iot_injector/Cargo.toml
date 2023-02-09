@@ -32,7 +32,7 @@ rust_decimal_macros = {workspace = true}
 metrics = {workspace = true }
 metrics-exporter-prometheus = { workspace = true }
 helium-crypto = { workspace = true }
-helium-proto = {git = "https://github.com/helium/proto", branch = "rg/attach-hex-scale-reward-unit-to-receipts", features = ["services"]}
+helium-proto = { workspace = true }
 once_cell = {workspace = true}
 poc-metrics = { path = "../metrics" }
 file-store = {path = "../file_store"}
