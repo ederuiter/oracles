@@ -11,6 +11,7 @@ futures = {workspace = true}
 serde = {workspace = true}
 http-serde = {workspace = true}
 thiserror = {workspace = true}
+<<<<<<< HEAD
 beacon = {workspace = true}
 helium-proto = { workspace = true }
 helium-crypto = { workspace = true }

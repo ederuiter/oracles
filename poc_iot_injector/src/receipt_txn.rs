@@ -69,7 +69,7 @@ pub fn handle_report_msg(
 
     path.push(path_element);
 
-    let (bare_txn, hash, hash_b64_url) = construct_bare_txn(path, beacon_received_ts, &keypair)?;
+    let (bare_txn, hash, hash_b64_url) = construct_signed_txn(path, beacon_received_ts, &keypair)?;
     Ok(TxnDetails {
         txn: wrap_txn(bare_txn),
         hash,
@@ -102,16 +102,18 @@ fn wrap_txn(txn: BlockchainTxnPocReceiptsV2) -> BlockchainTxn {
     }
 }
 
-fn construct_bare_txn(
+fn construct_signed_txn(
     path: PocPath,
     timestamp: i64,
     keypair: &Keypair,
 ) -> Result<(BlockchainTxnPocReceiptsV2, Vec<u8>, String), TxnConstructionError> {
+    let strip_path = strip_path(path.clone());
+
     let mut txn = BlockchainTxnPocReceiptsV2 {
         challenger: keypair.public_key().to_vec(),
         secret: vec![],
         onion_key_hash: vec![],
-        path,
+        path: strip_path,
         fee: 0,
         signature: vec![],
         block_hash: vec![],
@@ -119,8 +121,40 @@ fn construct_bare_txn(
     };
 
     txn.signature = sign_txn(&txn, keypair)?;
+
+    // Re-attach the original (unstripped) path back to the txn after signing
+    txn.path = path;
+
     let (txn_hash, txn_hash_b64url) = hash_txn(&txn);
     Ok((txn, txn_hash, txn_hash_b64url))
+}
+
+/// Before signing the txn we strip the path of hex_scale and reward_unit contained in the
+/// individual receipt and witnesses
+fn strip_path(path: PocPath) -> PocPath {
+    let mut strip_path: PocPath = Vec::with_capacity(1);
+    for element in path {
+        let challengee = element.challengee;
+        let mut new_element = BlockchainPocPathElementV1 {
+            challengee,
+            witnesses: vec![],
+            receipt: None,
+        };
+        let mut witnesses = vec![];
+        for mut witness in element.witnesses {
+            witness.reward_unit = 0;
+            witness.hex_scale = 0;
+            witnesses.push(witness)
+        }
+        new_element.witnesses = witnesses;
+        if let Some(mut receipt) = element.receipt {
+            receipt.hex_scale = 0;
+            receipt.reward_unit = 0;
+            new_element.receipt = Some(receipt)
+        }
+        strip_path.push(new_element)
+    }
+    strip_path
 }
 
 fn construct_path_element(
@@ -141,8 +175,9 @@ fn construct_poc_witnesses(
     let mut poc_witnesses: Vec<BlockchainPocWitnessV1> = Vec::with_capacity(witness_reports.len());
     for witness_report in witness_reports {
         let witness_invalid_reason = witness_report.invalid_reason as i32;
-        let reward_shares = ((witness_report.hex_scale * witness_report.reward_unit)
-            * *REWARD_SHARE_MULTIPLIER)
+        let hex_scale = witness_report.hex_scale;
+        let reward_unit = witness_report.reward_unit;
+        let reward_shares = ((hex_scale * reward_unit) * *REWARD_SHARE_MULTIPLIER)
             .to_u32()
             .unwrap_or_default();
 
@@ -169,6 +204,8 @@ fn construct_poc_witnesses(
             datarate: witness_report.report.datarate.to_string(),
             channel: witness_invalid_reason,
             reward_shares,
+            reward_unit: reward_unit.to_u32().unwrap_or(0),
+            hex_scale: hex_scale.to_u32().unwrap_or(0),
         };
 
         poc_witnesses.push(poc_witness)
@@ -183,8 +220,9 @@ fn hz_to_mhz(freq_hz: u64) -> f32 {
 }
 
 fn construct_poc_receipt(beacon_report: IotValidBeaconReport) -> (BlockchainPocReceiptV1, i64) {
-    let reward_shares = ((beacon_report.hex_scale * beacon_report.reward_unit)
-        * *REWARD_SHARE_MULTIPLIER)
+    let hex_scale = beacon_report.hex_scale;
+    let reward_unit = beacon_report.reward_unit;
+    let reward_shares = ((hex_scale * reward_unit) * *REWARD_SHARE_MULTIPLIER)
         .to_u32()
         .unwrap_or_default();
 
@@ -206,6 +244,8 @@ fn construct_poc_receipt(beacon_report: IotValidBeaconReport) -> (BlockchainPocR
         tx_power: beacon_report.report.tx_power,
         addr_hash: vec![],
         reward_shares,
+        reward_unit: reward_unit.to_u32().unwrap_or(0),
+        hex_scale: hex_scale.to_u32().unwrap_or(0),
     };
 
     (poc_receipt, beacon_received_ts)
@@ -248,6 +288,8 @@ mod tests {
             datarate: "dr".to_string(),
             channel: 0,
             reward_shares: 0,
+            reward_unit: 0,
+            hex_scale: 0,
         };
         let poc_id: Vec<u8> = vec![0];
         let max_witnesses_per_receipt = 14;

@@ -1293,7 +1293,7 @@ dependencies = [
  "config",
  "futures",
  "h3ron",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=master)",
  "http",
  "itertools",
  "node-follower",
@@ -1504,7 +1504,7 @@ dependencies = [
  "futures",
  "futures-util",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=master)",
  "hex-literal",
  "http",
  "lazy_static",
@@ -1961,6 +1961,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "helium-proto"
+version = "0.1.0"
+source = "git+https://github.com/helium/proto?branch=rg/attach-hex-scale-reward-unit-to-receipts#6b7348140e4d59d2b7630562f986f1a99324b846"
+dependencies = [
+ "bytes",
+ "prost",
+ "prost-build",
+ "protoc-bin-vendored",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tonic",
+ "tonic-build",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2184,7 +2200,7 @@ dependencies = [
  "futures",
  "futures-util",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=master)",
  "http",
  "metrics",
  "metrics-exporter-prometheus",
@@ -2224,7 +2240,7 @@ dependencies = [
  "futures",
  "futures-util",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=master)",
  "hextree",
  "libflate",
  "metrics",
@@ -2267,7 +2283,7 @@ dependencies = [
  "geo-types",
  "h3ron",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=master)",
  "http-serde",
  "humantime",
  "itertools",
@@ -2655,7 +2671,7 @@ dependencies = [
  "futures",
  "futures-util",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=master)",
  "http-serde",
  "lazy_static",
  "metrics",
@@ -2694,7 +2710,7 @@ dependencies = [
  "futures",
  "futures-util",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=master)",
  "http-serde",
  "humantime",
  "lazy_static",
@@ -2785,7 +2801,7 @@ dependencies = [
  "beacon",
  "futures",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=rg/attach-hex-scale-reward-unit-to-receipts)",
  "http",
  "http-serde",
  "rand",
@@ -3026,7 +3042,7 @@ dependencies = [
  "futures",
  "futures-util",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=master)",
  "http",
  "hyper",
  "jsonrpsee",
@@ -3062,7 +3078,7 @@ dependencies = [
  "futures-util",
  "governor",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=rg/attach-hex-scale-reward-unit-to-receipts)",
  "http-serde",
  "metrics",
  "metrics-exporter-prometheus",
@@ -3508,7 +3524,7 @@ dependencies = [
  "futures",
  "futures-util",
  "helium-crypto",
- "helium-proto",
+ "helium-proto 0.1.0 (git+https://github.com/helium/proto?branch=master)",
  "http-serde",
  "lazy_static",
  "metrics",
