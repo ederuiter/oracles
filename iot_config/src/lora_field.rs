@@ -38,8 +38,8 @@ impl FromRow<'_, PgRow> for DevAddrRange {
             route_id: row
                 .try_get::<sqlx::types::Uuid, &str>("route_id")?
                 .to_string(),
-            start_addr: row.try_get::<i64, &str>("start_addr")?.into(),
-            end_addr: row.try_get::<i64, &str>("end_addr")?.into(),
+            start_addr: row.try_get::<i32, &str>("start_addr")?.into(),
+            end_addr: row.try_get::<i32, &str>("end_addr")?.into(),
         })
     }
 }
