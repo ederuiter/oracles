@@ -451,6 +451,7 @@ fn verify_beacon_payload(
         InvalidReason::InvalidPacket
     })?;
     tracing::debug!("generated beacon {:?}", generated_beacon);
+    println!("generated beacon {:?}", generated_beacon);
 
     // cast the received beaconers report into a beacon
     let reported_beacon: beacon::Beacon =
@@ -462,6 +463,7 @@ fn verify_beacon_payload(
             }
         };
     tracing::debug!("reported beacon {:?}", reported_beacon);
+    println!("reported beacon {:?}", reported_beacon);
     // compare reports
     if reported_beacon != generated_beacon {
         tracing::debug!(
@@ -863,7 +865,7 @@ impl VerifyWitnessResult {
 mod tests {
     use super::*;
     use crate::last_beacon::LastBeacon;
-    use chrono::Duration;
+    use chrono::{Duration, TimeZone};
     use helium_proto::services::poc_lora;
     use std::str::FromStr;
 
@@ -936,12 +938,16 @@ mod tests {
         let pub_key =
             PublicKeyBinary::from_str("112bUuQaE7j73THS9ABShHGokm46Miip9L361FSyWv7zSYn8hZWf")
                 .unwrap();
-        let local_entropy_bytes: Vec<u8> = (0..50).map(|_| rand::random::<u8>()).collect();
-        let remote_entropy_bytes: Vec<u8> = (0..50).map(|_| rand::random::<u8>()).collect();
-        let entropy_start = Utc::now();
+        // hardcode some entropy data taken from a beacon reported by a hotspot
+        let local_entropy_bytes = [52, 235, 22, 130];
+        let remote_entropy_bytes = [33, 232, 102, 115, 82, 1, 70, 106, 86, 148, 125, 49, 238, 23, 141, 179, 213, 253, 106, 108, 133, 171, 65, 60, 48, 49, 175, 235, 64, 14, 197, 30];
+        let entropy_start = 1676300307000;
         let entropy_version = 1;
         let gain: i32 = 12;
         let region: ProtoRegion = ProtoRegion::Eu868;
+
+        // this is the data payload we expect to be generated from the above entropy
+        let expected_generated_data = [13, 254, 171, 241, 182, 135, 58, 4, 148, 81, 67, 190, 209, 18, 198, 162, 4, 68, 198, 43, 30, 243, 163, 190, 138, 96, 33, 244, 39, 123, 141, 99, 59, 113, 95, 102, 80, 5, 211, 127, 202, 159, 157, 27, 162, 230, 44, 47, 130, 84, 189];
 
         let region_params =
             beacon::RegionParams::from_bytes(region.into(), gain as u64, EU868_PARAMS)
@@ -949,12 +955,15 @@ mod tests {
 
         let generated_beacon = generate_beacon(
             &region_params,
-            entropy_start.timestamp_millis(),
+            entropy_start,
             entropy_version,
             &local_entropy_bytes,
             &remote_entropy_bytes,
         )
         .unwrap();
+
+        // confirm our generated beacon returns the expected data payload
+        assert_eq!(expected_generated_data.to_vec(), generated_beacon.data);
 
         // cast the beacon in to a beacon report
         let mut lora_beacon_report =
@@ -975,7 +984,7 @@ mod tests {
             region,
             &region_params.params,
             gain,
-            entropy_start,
+            Utc.timestamp_millis_opt(entropy_start).unwrap(),
             entropy_version
         )
         .is_ok())
